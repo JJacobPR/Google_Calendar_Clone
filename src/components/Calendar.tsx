@@ -1,11 +1,12 @@
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { startOfWeek, startOfMonth, endOfWeek, endOfMonth, eachDayOfInterval, isSameMonth, isBefore, endOfDay, isToday, subMonths, addMonths } from "date-fns";
 import "./Calendar.css";
 import { formatDate } from "../utils/formatDate";
 import { cc } from "../utils/cc";
-import { useEvents } from "../context/useEvent";
+import { EVENT_COLORS, useEvents } from "../context/useEvent";
 import Modal, { ModalProps } from "./Modal";
 import { UnionOmit } from "../utils/types";
+import { Event } from "../context/Events";
 
 const Calendar = () => {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
@@ -88,7 +89,14 @@ const CalendarDay = ({ day, showWeekName, selectedMonth }: CalendarDayProps) => 
           <div className="event-name">Event Name</div>
         </button>
       </div> */}
-      <EventFormModal date={day} isOpen={isNewEventModalOpen} onClose={() => setIsNewEventModalOpen(false)} onSubmit={() => {}} />
+      <EventFormModal
+        date={day}
+        isOpen={isNewEventModalOpen}
+        onClose={() => setIsNewEventModalOpen(false)}
+        onSubmit={() => {
+          addEvent;
+        }}
+      />
     </div>
   );
 };
@@ -99,56 +107,59 @@ type EventFormModalProps = {
   Omit<ModalProps, "children">;
 
 const EventFormModal = ({ onSubmit, onDelete, event, date, ...modalProps }: EventFormModalProps) => {
+  const isNew = event == null;
+  const formID = useId();
+
   return (
     <Modal {...modalProps}>
       <div className="modal-title">
-        <div>Add Event</div>
-        <small>6/8/23</small>
-        <button className="close-btn">&times;</button>
+        <div>{isNew ? "Add" : "Edit"} Event</div>
+        <small>{formatDate(date || event.date, { dateStyle: "short" })}</small>
+        <button onClick={modalProps.onClose} className="close-btn">
+          &times;
+        </button>
       </div>
       <form>
         <div className="form-group">
-          <label htmlFor="name">Name</label>
-          <input type="text" name="name" id="name" />
+          <label htmlFor={`${formID}-name`}>Name</label>
+          <input type="text" name="name" id={`${formID}-name`} />
         </div>
         <div className="form-group checkbox">
-          <input type="checkbox" name="all-day" id="all-day" />
-          <label htmlFor="all-day">All Day?</label>
+          <input type="checkbox" name="all-day" id={`${formID}-all-day`} />
+          <label htmlFor={`${formID}-all-day`}>All Day?</label>
         </div>
         <div className="row">
           <div className="form-group">
-            <label htmlFor="start-time">Start Time</label>
-            <input type="time" name="start-time" id="start-time" />
+            <label htmlFor={`${formID}-start-time`}>Start Time</label>
+            <input type="time" name="start-time" id={`${formID}-start-time`} />
           </div>
           <div className="form-group">
-            <label htmlFor="end-time">End Time</label>
-            <input type="time" name="end-time" id="end-time" />
+            <label htmlFor={`${formID}-end-time`}>End Time</label>
+            <input type="time" name="end-time" id={`${formID}-end-time`} />
           </div>
         </div>
         <div className="form-group">
           <label>Color</label>
           <div className="row left">
-            <input type="radio" name="color" value="blue" id="blue" checked className="color-radio" />
-            <label htmlFor="blue">
-              <span className="sr-only">Blue</span>
-            </label>
-            <input type="radio" name="color" value="red" id="red" className="color-radio" />
-            <label htmlFor="red">
-              <span className="sr-only">Red</span>
-            </label>
-            <input type="radio" name="color" value="green" id="green" className="color-radio" />
-            <label htmlFor="green">
-              <span className="sr-only">Green</span>
-            </label>
+            {EVENT_COLORS.map((color) => (
+              <>
+                <input type="radio" name="color" value={color} id={`${formID}-${color}`} checked className="color-radio" />
+                <label htmlFor={`${formID}-${color}`}>
+                  <span className="sr-only">{color}</span>
+                </label>
+              </>
+            ))}
           </div>
         </div>
         <div className="row">
           <button className="btn btn-success" type="submit">
-            Add
+            {isNew ? "Add" : "Edit"}
           </button>
-          <button className="btn btn-delete" type="button">
-            Delete
-          </button>
+          {onDelete != null && (
+            <button onClick={onDelete} className="btn btn-delete" type="button">
+              Delete
+            </button>
+          )}
         </div>
       </form>
     </Modal>
